@@ -85,6 +85,10 @@ public final class EhloCommand extends BaseCommand
 			}
 		}
 
+		if (sess.getServer().getSupportUTF8()) {
+				response.append("\r\n" + "250-SMTPUTF8");
+		}
+
 		response.append("\r\n" + "250 Ok");
 		sess.sendResponse(response.toString());
 	}

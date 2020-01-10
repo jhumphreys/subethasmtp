@@ -84,6 +84,17 @@ public final class MailCommand extends BaseCommand
 		}
 		
 		sess.setDeclaredMessageSize(size);
+
+		sess.setDeclaredUTF8(false);
+		if (args.matches(".* SMTPUTF8\\b.*")) {
+			if (sess.getServer().getSupportUTF8()) {
+				sess.setDeclaredUTF8(true);
+			} else {
+				sess.sendResponse("555 5.5.5 SMTPUTF8 extension not supported");
+				return;
+			}
+		}
+		
 		sess.startMailTransaction();
 		
 		try

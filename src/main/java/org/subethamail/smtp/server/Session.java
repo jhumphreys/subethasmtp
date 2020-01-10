@@ -93,6 +93,8 @@ public final class Session implements Runnable, MessageContext {
     /** Some more state information */
     private boolean tlsStarted;
     private Certificate[] tlsPeerCertificates;
+    private boolean declaredUTF8;
+
 
     /**
      * Creates the Runnable Session object.
@@ -491,5 +493,13 @@ public final class Session implements Runnable, MessageContext {
     @Override
     public Certificate[] getTlsPeerCertificates() {
         return tlsPeerCertificates;
+    }
+
+    public void setDeclaredUTF8(boolean declaredUTF8) {
+        this.declaredUTF8 = declaredUTF8;
+    }
+
+    public boolean isDeclaredUTF8() {
+        return this.declaredUTF8;
     }
 }

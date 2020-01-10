@@ -1,6 +1,11 @@
 package org.subethamail.smtp.command;
 
+import org.subethamail.smtp.server.SMTPServer;
 import org.subethamail.smtp.util.ServerTestCase;
+import org.subethamail.smtp.util.Testing;
+import org.subethamail.smtp.util.Client;
+import org.subethamail.wiser.Wiser;
+
 
 /**
  * @author Jon Stevens
@@ -124,6 +129,40 @@ public class MailTest extends ServerTestCase
 
 	    this.send("MAIL FROM:<validuser@subethamail.org> SIZE=1001");
 	    this.expect("552");
+	}
+
+	public void testUtf8Param() throws Exception
+	{
+		utf8Server();
+		this.expect("220");
+
+		this.send("EHLO foo.com");
+	    this.expectContains("250-SMTPUTF8");
+
+	    this.send("MAIL FROM:<valid\u00dcser@subethamail.org> SMTPUTF8");
+	    this.expect("250 Ok");
+	}
+
+	public void testUtf8ParamUnsupported() throws Exception
+	{
+		this.expect("220");
+
+		this.send("EHLO foo.com");
+		this.expect("250");
+
+	    this.send("MAIL FROM:<validuser@subethamail.org> SMTPUTF8");
+	    this.expect("555 5.5.5 SMTPUTF8 extension not supported");
+	}
+
+	private void utf8Server() throws Exception {
+		this.c.close();
+		this.wiser.stop();
+		this.wiser = Wiser.accepter(Testing.ACCEPTER).server(SMTPServer
+			.port(PORT) 
+			.maxMessageSize(MAX_MESSAGE_SIZE)
+			.supportUTF8());
+		this.wiser.start();
+		this.c = new Client("localhost", PORT);
 	}
 
 }

@@ -90,6 +90,12 @@ public final class SMTPServer implements SSLSocketCreator {
      */
     private final boolean requireAuth;
 
+    /**
+     * If true, support the SMTP Extension for Internationalized Email
+     * (SMTPUTF8).  See RFC 6531 at https://tools.ietf.org/html/rfc6531
+     */
+    private final boolean supportUTF8;
+
     /** If true, no Received headers will be inserted */
     private final boolean disableReceivedHeaders;
 
@@ -175,6 +181,12 @@ public final class SMTPServer implements SSLSocketCreator {
          * AuthenticationHandlerFactory has been set
          */
         private boolean requireAuth = false;
+
+        /**
+         * If true, support the SMTP Extension for Internationalized Email
+         * (SMTPUTF8).  See RFC 6531 at https://tools.ietf.org/html/rfc6531
+         */
+        private boolean supportUTF8 = false;
 
         /** If true, no Received headers will be inserted */
         private boolean disableReceivedHeaders = false;
@@ -275,8 +287,7 @@ public final class SMTPServer implements SSLSocketCreator {
         }
 
         public Builder simpleMessageListener(SimpleMessageListener listener) {
-            this.messageHandlerFactory = new SimpleMessageListenerAdapter(listener);
-            return this;
+            return messageHandlerFactory(new SimpleMessageListenerAdapter(listener));
         }
 
         /**
@@ -393,6 +404,27 @@ public final class SMTPServer implements SSLSocketCreator {
 
         public Builder requireAuth() {
             return requireAuth(true);
+        }
+
+        /**
+         * If true, support the SMTP Extension for Internationalized Email
+         * (SMTPUTF8).  See RFC 6531 at https://tools.ietf.org/html/rfc6531
+         *
+         * This will cause the server to advertise SMTPUTF8 in the
+         * EHLO response, which means that clients may send in mail
+         * that has unicode in the email addresses.
+         *
+         * If you are planning to process the incoming mail using
+         * javamail, you may need to set the system and session
+         * properties mail.mime.allowutf8 to true.
+         */
+        public Builder supportUTF8(boolean value) {
+            this.supportUTF8 = value;
+            return this;
+        }
+
+        public Builder supportUTF8() {
+            return supportUTF8(true);
         }
 
         public Builder insertReceivedHeaders(boolean value) {
@@ -535,7 +567,7 @@ public final class SMTPServer implements SSLSocketCreator {
             }
             return new SMTPServer(hostName, bindAddress, port, backlog, softwareName, messageHandlerFactory,
                     authenticationHandlerFactory, executorService, enableTLS, hideTLS, requireTLS, requireAuth,
-                    disableReceivedHeaders, maxConnections, connectionTimeoutMs, maxRecipients, maxMessageSize,
+                                  supportUTF8, disableReceivedHeaders, maxConnections, connectionTimeoutMs, maxRecipients, maxMessageSize,
                     sessionIdFactory, startTlsSocketCreator, serverSocketCreator, serverThreadNameProvider);
         }
 
@@ -545,7 +577,7 @@ public final class SMTPServer implements SSLSocketCreator {
             String softwareName, MessageHandlerFactory messageHandlerFactory,
             Optional<AuthenticationHandlerFactory> authenticationHandlerFactory,
             Optional<ExecutorService> executorService, boolean enableTLS, boolean hideTLS, boolean requireTLS,
-            boolean requireAuth, boolean disableReceivedHeaders, int maxConnections, int connectionTimeoutMs,
+            boolean requireAuth, boolean supportUTF8, boolean disableReceivedHeaders, int maxConnections, int connectionTimeoutMs,
             int maxRecipients, int maxMessageSize, SessionIdFactory sessionIdFactory, SSLSocketCreator startTlsSocketFactory,
             ServerSocketCreator serverSocketCreator, Function<SMTPServer, String> serverThreadNameProvider) {
         Preconditions.checkNotNull(messageHandlerFactory);
@@ -568,6 +600,7 @@ public final class SMTPServer implements SSLSocketCreator {
         this.hideTLS = hideTLS;
         this.requireTLS = requireTLS;
         this.requireAuth = requireAuth;
+        this.supportUTF8 = supportUTF8;
         this.disableReceivedHeaders = disableReceivedHeaders;
         this.maxConnections = maxConnections;
         this.connectionTimeoutMs = connectionTimeoutMs;
@@ -812,6 +845,10 @@ public final class SMTPServer implements SSLSocketCreator {
 
     public boolean getRequireAuth() {
         return requireAuth;
+    }
+
+    public boolean getSupportUTF8() {
+        return supportUTF8;
     }
 
     public int getMaxMessageSize() {
